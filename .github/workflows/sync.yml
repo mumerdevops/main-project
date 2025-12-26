@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false   # 🔑 IMPORTANT
 
       - name: Push to backup-project
         env:
@@ -25,12 +26,8 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # remove backup remote if it already exists
-          git remote remove backup || true
-
-          # add backup remote again
-          git remote add backup \
+          # overwrite origin to point to backup repo using PAT
+          git remote set-url origin \
             https://x-access-token:${BACKUP_TOKEN}@github.com/mumerdevops/backup-project.git
 
-          # push code to backup repo
-          git push backup main:main --force
+          git push origin main --force

@@ -1,33 +1,28 @@
-name: Sync to Backup
+name: Sync Repos
 
 on:
   push:
     branches:
       - main
-
-permissions:
-  contents: write
-
 jobs:
   sync:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout main-project
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false   # 🔑 IMPORTANT
+      - name: Checkout source repository
+        uses: actions/checkout@v2
 
-      - name: Push to backup-project
-        env:
-          BACKUP_TOKEN: ${{ secrets.BACKUP_TOKEN }}
+      - name: Push to destination repository
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          # overwrite origin to point to backup repo using PAT
-          git remote set-url origin \
-            https://x-access-token:${BACKUP_TOKEN}@github.com/mumerdevops/backup-project.git
-
-          git push origin main --force
+          git config --global user.email "your email"
+          git config --global user.name "your user name"
+          git clone https://${{ env.ORG_NAME }}:${{ secrets.PAT }}@github.com/${{ env.ORG_NAME }}/destination-repo.git
+          cd backup-project
+          git remote add ${{ env.ORIGINAL_REPO_NAME }} https://${{ env.ORG_NAME }}:${{ secrets.PAT }}@github.com/${{ env.ORG_NAME }}/${{ env.ORIGINAL_REPO_NAME }}.git
+          git remote update
+          git merge ${{ env.ORIGINAL_REPO_NAME }}/main
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+          ORIGINAL_REPO_NAME: ${{ github.event.repository.name }}
+          ORG_NAME: Your workspace name

@@ -15,28 +15,22 @@ jobs:
 
       - name: Push to destination repository
         run: |
-          # 1. Setup Git Identity
           git config --global user.email "muhammadumer5689@gmail.com"
           git config --global user.name "mumerdevops"
 
-          # 2. Clone the destination (backup-project)
-          # We use the PAT for authentication to allow pushing to a different repo
+          # 1. Clone destination
           git clone "https://x-access-token:${{ secrets.PAT }}@github.com/mumerdevops/backup-project.git" backup-dir
-          
           cd backup-dir
 
-          # 3. Add the source repository (main-project) as a remote
+          # 2. Add source
           git remote add source-repo "https://x-access-token:${{ secrets.PAT }}@github.com/mumerdevops/main-project.git"
-          
-          # 4. Fetch the latest code from the source
           git fetch source-repo
-          
-          # 5. Merge changes from source/main into backup/main
-          # --allow-unrelated-histories is used in case the repos started differently
-          git merge source-repo/main --allow-unrelated-histories -m "Auto-sync from main-project"
 
-          # 6. Push the updated code to the backup repository
+          # 3. Merge with Strategy "theirs" 
+          # This tells Git: If there is a conflict, use the version from source-repo
+          git merge source-repo/main --allow-unrelated-histories -X theirs -m "Auto-sync: resolving conflicts by preferring source"
+
+          # 4. Push to backup
           git push origin main
         env:
-          # This must match the Secret name you created in GitHub
           PAT: ${{ secrets.PAT }}

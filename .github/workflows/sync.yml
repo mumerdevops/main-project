@@ -15,33 +15,25 @@ jobs:
 
       - name: Push to destination repository
         run: |
-          # 1. Setup Git Identity
+          # 1. Setup Identity
           git config --global user.email "muhammadumer5689@gmail.com"
           git config --global user.name "mumerdevops"
 
-          # 2. Clone the destination repo into a folder named 'backup-dir'
+          # 2. Clone the backup repo
           git clone "https://x-access-token:${{ secrets.PAT }}@github.com/mumerdevops/backup-project.git" backup-dir
-          
           cd backup-dir
 
-          # 3. Add the source (main-project) as a remote
+          # 3. Add the main project as source
           git remote add source-repo "https://x-access-token:${{ secrets.PAT }}@github.com/mumerdevops/main-project.git"
-          
-          # 4. Fetch the latest changes from the source
           git fetch source-repo
 
-          # 5. Merge changes
-          # -X theirs: If a file is modified in main but deleted in backup, KEEP IT.
-          # --allow-unrelated-histories: Forces merge even if they don't share a history.
-          git merge source-repo/main --allow-unrelated-histories -X theirs -m "Auto-sync from main-project"
+          # 4. THE FIX: Force the backup branch to match source-repo/main exactly
+          # This deletes the conflicting local history and replaces it with the source history
+          git checkout main
+          git reset --hard source-repo/main
 
-          # 6. Safety check: stage all resolved files
-          git add .
-          
-          # Only commit if there are actually changes to commit (prevents error if already synced)
-          git diff-index --quiet HEAD || git commit -m "Confirm merge and resolve conflicts"
-
-          # 7. Push to the backup repository
-          git push origin main
+          # 5. Force push to the backup repo
+          # We use --force because we changed the history to match the source
+          git push origin main --force
         env:
           PAT: ${{ secrets.PAT }}

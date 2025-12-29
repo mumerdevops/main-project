@@ -10,30 +10,38 @@ jobs:
   analysis:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4 # Updated to latest version
         with:
-          fetch-depth: 0 # Sonar needs full history to see who wrote the code
+          fetch-depth: 0 
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        # Updated from deprecated sonarcloud-github-action to the new version
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          # These arguments fix the "mandatory properties" error
+          args: >
+            -Dsonar.projectKey=mumerdevops_main-project
+            -Dsonar.organization=mumerdevops
+            -Dsonar.sources=.
+            -Dsonar.host.url=https://sonarcloud.io
 
   # JOB 2: Sync (The Backup)
   sync:
-    needs: analysis # <--- CRITICAL: Sync only starts if Analysis finishes successfully!
+    needs: analysis 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Mirror to Backup Repository
         run: |
           git config --global user.email "muhammadumer5689@gmail.com"
           git config --global user.name "mumerdevops"
           
-          # Clone and Reset (Same logic as before)
+          # Use the PAT for authentication
           git clone "https://x-access-token:${{ secrets.PAT }}@github.com/mumerdevops/backup-project.git" backup-dir
           cd backup-dir
           git remote add source-repo "https://x-access-token:${{ secrets.PAT }}@github.com/mumerdevops/main-project.git"
@@ -41,5 +49,3 @@ jobs:
           git checkout main
           git reset --hard source-repo/main
           git push origin main --force
-        env:
-          PAT: ${{ secrets.PAT }}

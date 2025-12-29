@@ -1,4 +1,4 @@
-name: Sync Repos
+name: Quality Gate and Sync
 
 on:
   push:
@@ -6,34 +6,40 @@ on:
       - main
 
 jobs:
-  sync:
+  # JOB 1: Analysis (The Checkpoint)
+  analysis:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout source repository
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Sonar needs full history to see who wrote the code
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # JOB 2: Sync (The Backup)
+  sync:
+    needs: analysis # <--- CRITICAL: Sync only starts if Analysis finishes successfully!
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
         uses: actions/checkout@v3
 
-      - name: Push to destination repository
+      - name: Mirror to Backup Repository
         run: |
-          # 1. Setup Identity
           git config --global user.email "muhammadumer5689@gmail.com"
           git config --global user.name "mumerdevops"
-
-          # 2. Clone the backup repo
+          
+          # Clone and Reset (Same logic as before)
           git clone "https://x-access-token:${{ secrets.PAT }}@github.com/mumerdevops/backup-project.git" backup-dir
           cd backup-dir
-
-          # 3. Add the main project as source
           git remote add source-repo "https://x-access-token:${{ secrets.PAT }}@github.com/mumerdevops/main-project.git"
           git fetch source-repo
-
-          # 4. THE FIX: Force the backup branch to match source-repo/main exactly
-          # This deletes the conflicting local history and replaces it with the source history
           git checkout main
           git reset --hard source-repo/main
-
-          # 5. Force push to the backup repo
-          # We use --force because we changed the history to match the source
           git push origin main --force
         env:
           PAT: ${{ secrets.PAT }}

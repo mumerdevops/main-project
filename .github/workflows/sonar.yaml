@@ -20,7 +20,7 @@ jobs:
           # Define your project key here
           args: >
             -Dsonar.projectKey=main-project
-            -Dsonar.projectName=main project
+            -Dsonar.projectName=main-project
             -Dsonar.sources=.
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

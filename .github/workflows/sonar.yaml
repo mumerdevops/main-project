@@ -1,4 +1,15 @@
-steps:
+name: SonarQube Analysis
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  sonarqube:
+    runs-on: self-hosted # Use 'self-hosted' if not using a tunnel
+    steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0

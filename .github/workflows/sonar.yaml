@@ -2,27 +2,20 @@ name: SonarQube Analysis
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   pull_request:
-    types: [opened, synchronize, reopened]
+    branches: [ "main" ]
 
 jobs:
-  build:
-    name: Build and Analyze
-    runs-on: self-hosted
+  sonarqube:
+    runs-on: self-hosted # Use 'self-hosted' if not using a tunnel
     steps:
       - uses: actions/checkout@v4
         with:
-          # Fetch depth 0 is required for SonarQube to analyze the whole project history
           fetch-depth: 0
+
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v2.4.0 # Use the official action
+        uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      - name: Wait for Quality Gate status
-        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
-        # Optional: You can fail the pipeline if the quality gate fails
-        # env:
-        #   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

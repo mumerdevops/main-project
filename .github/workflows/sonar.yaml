@@ -1,21 +1,16 @@
-name: SonarQube Analysis
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-jobs:
-  sonarqube:
-    runs-on: self-hosted # Use 'self-hosted' if not using a tunnel
-    steps:
+steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@master
+        with:
+          # Define your project key here
+          args: >
+            -Dsonar.projectKey=main-project
+            -Dsonar.projectName=main project
+            -Dsonar.sources=.
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}

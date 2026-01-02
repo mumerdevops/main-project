@@ -8,7 +8,7 @@ on:
 
 jobs:
   sonarqube:
-    runs-on: self-hosted # Use 'self-hosted' if not using a tunnel
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
         with:
@@ -16,12 +16,33 @@ jobs:
 
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
-          # Define your project key here
           args: >
             -Dsonar.projectKey=main-project
             -Dsonar.projectName=main-project
             -Dsonar.sources=.
+
+      # 1. Wait for SonarQube to finish processing the background task
+      - name: Wait for SonarQube Quality Gate
+        id: sonarqube-quality-gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      # 2. Download the analysis summary via API
+      - name: Fetch SonarQube Report
+        run: |
+          curl -u "${{ secrets.SONAR_TOKEN }}:" "${{ secrets.SONAR_HOST_URL }}/api/qualitygates/project_status?projectKey=main-project" > sonar-report.json
+          echo "Summary of analysis saved to sonar-report.json"
+
+      # 3. Store the report in GitHub Actions (doesn't clutter your repo)
+      - name: Upload Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonarqube-analysis-report
+          path: sonar-report.json

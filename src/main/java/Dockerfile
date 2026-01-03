@@ -1,6 +1,11 @@
 FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
+
+# Sab kuch copy karein (is mein ab .jar file bhi hogi)
 COPY . .
-# File path ab change ho chuka hai
+
+# Compile karein
 RUN javac src/main/java/OrderProcessor.java
-CMD ["java", "-cp", "src/main/java", "OrderProcessor"]
+
+# Run karte waqt Classpath (-cp) mein Driver aur apni class dono ka path dein
+CMD ["java", "-cp", ".:src/main/java:mysql-connector-j-8.0.33.jar", "OrderProcessor"]
